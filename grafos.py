@@ -1,4 +1,4 @@
-import csv
+# import csv
 
 def crear_grafo():
     return {}
@@ -17,24 +17,25 @@ def borrar_vertice(grafo,vertice):
     except:
         return false
 
-# UPGRADE: meterlo en una lista
-def ver_vertices(grafo):
-    return grafo.keys()
 
-# UPGRADE: meterlo en una lista
+def ver_vertices(grafo):
+    return list(grafo.keys())
+
+
 def ver_adyacentes(grafo,vertice):
     try:
-        return grafo[vertice].keys()
+        return list(grafo[vertice].keys())
     except:
         return False
 
-# UPGRADE: agregar if vert1/vert2 existe en el grafo.
+# REVIEW: probalemente no hace falta el try junto con el if
 def agregar_arista(grafo,vert1,vert2,peso=0):
-    try:
-        grafo[vert1][vert2] = peso
-        grafo[vert2][vert1] = peso
-    except:
-        return False
+    if(vert1 and vert2 in grafo):
+        try:
+            grafo[vert1][vert2] = peso
+            grafo[vert2][vert1] = peso
+        except:
+            return False
 
 
 def remover_arista(grafo,vert1,vert2):
@@ -51,15 +52,19 @@ def obtener_peso(grafo,vert1,vert2):
     except:
         return False
 
-# UPGRADE: agregar if vert1/vert2 existe en el grafo.
+# REVIEW: probalemente no hace falta el try junto con el if
 def cambiar_peso(grafo,vert1,vert2,peso):
-    try:
-        grafo[vert1][vert2] = peso
-        grafo[vert2][vert1] = peso
-    except:
-        return False
+    if(vert1 and vert2 in grafo):
+        try:
+            grafo[vert1][vert2] = peso
+            grafo[vert2][vert1] = peso
+        except:
+            return False
 
 
+
+
+##### TESTS ####
 """
 f = crear_grafo()
 agregar_vertice(f,"vertex1")
@@ -73,31 +78,44 @@ agregar_arista(f,"vertex1","vertex2")
 agregar_arista(f,"vertex3","vertex5",54)
 agregar_arista(f,"vertex1","vertex4",212)
 agregar_arista(f,"vertex5","vertex6",12)
+agregar_arista(f,"vertex4","vertex21",34)
 print(obtener_peso(f,"vertex3","vertex5"))
 cambiar_peso(f,"vertex3","vertex5",7)
 print(obtener_peso(f,"vertex3","vertex5"))
 agregar_arista(f,"vertex1","vertex6",12)
 
 print(ver_adyacentes(f,"vertex1"))
-#print(ver_vertices(f))
+print(ver_vertices(f))
 print(f)
 borrar_vertice(f,"vertex1")
 print(f)
-"""
+
 
 vuelos = crear_grafo()
+tiempo = crear_grafo()
+
 with open('vuelos.csv', "r") as csvfile:
     spamreader = csv.reader(csvfile, delimiter=',')
     for row in spamreader:
         agregar_vertice(vuelos,row[0])
         agregar_vertice(vuelos,row[1])
-    for row in spamreader:
-        agregar_arista(vuelos,row[0],row[1],row[3])
+        agregar_vertice(tiempo,row[0])
+        agregar_vertice(tiempo,row[1])
 
 with open('vuelos.csv', "r") as csvfile:
     spamreader = csv.reader(csvfile, delimiter=',')
     for row in spamreader:
         agregar_arista(vuelos,row[0],row[1],row[3])
+        agregar_arista(tiempo,row[0],row[1],row[2])
+
+
+
+
 
 #print(vuelos)
-print(len(ver_adyacentes(vuelos,"JFK")))
+print((ver_adyacentes(vuelos,"JFK")))
+print(obtener_peso(vuelos,"JFK","OAK"))
+print((ver_adyacentes(tiempo,"JFK")))
+print(obtener_peso(tiempo,"LAS","JAX"))
+print(obtener_peso(vuelos,"LAS","JAX"))
+"""
