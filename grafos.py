@@ -38,6 +38,14 @@ def agregar_arista(grafo,vert1,vert2,peso=0):
             return False
 
 
+def agregar_arista_dir(grafo,vert1,vert2,peso=0):
+    if(vert1 and vert2 in grafo):
+        try:
+            grafo[vert1][vert2] = peso
+        except:
+            return False
+
+
 def remover_arista(grafo,vert1,vert2):
     try:
         grafo[vert1].pop(vert2)

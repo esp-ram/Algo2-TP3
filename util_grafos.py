@@ -1,6 +1,7 @@
 from grafos import *
 import csv
 import operator
+import random
 
 
 # TODO: ordenar la cola en cada paso(simular el heap)
@@ -30,12 +31,6 @@ def dijkstra(grafo,origen):
 
 
 # REVIEW: verificar que origen/destino estan en el diccionario
-def padre_dist_minimo(grafo,origen,destino):
-    fath,dist = dijkstra(grafo,origen)
-    return (fath[destino],dist[destino])
-
-
-
 def camino_dist_minimo(grafo,origen,destino):
     fath,dist = dijkstra(grafo,origen)
     camino = [destino]
@@ -63,6 +58,30 @@ def BFS(grafo,origen):
                 orden[w] = orden[vertice]+1
 
     return padre,orden
+
+
+def _DFS(grafo,origen,visitados,padre,orden):
+    visitados.add(origen)
+    for w in ver_adyacentes(grafo,origen):
+        if w not in visitados:
+            padre[w] = origen
+            orden[w] = orden[origen]+1
+            _DFS(grafo,w,visitados,padre,orden)
+
+
+def DFS(grafo,origen):
+    visitados = set()
+    padres = {}
+    orden = {}
+    orden[origen] = 0
+    padres[origen] = None
+    _DFS(grafo,origen,visitados,padres,orden)
+    for v in ver_vertices(grafo):
+        if v not in visitados:
+            orden[v] = 0
+            padre[v] = None
+            _DFS(grafo,v,visitados,padres,orden)
+    return padres,orden
 
 
 def ordenar_vertices(graf,dicc_distancia):
@@ -132,116 +151,33 @@ def prim(grafo,vertice):
 
     return gr
 
-#### TESTS ####
-"""
-tiempos = crear_grafo()
 
-with open('vuelos_inventados.csv', "r") as csvfile:
-    spamreader = csv.reader(csvfile, delimiter=',')
-    for row in spamreader:
-        agregar_vertice(tiempos,row[0])
-        agregar_vertice(tiempos,row[1])
+def orden_topologico(grafo):
+    grados = {}
+    for v in ver_vertices(grafo):
+        grados[v] = 0
 
-with open('vuelos_inventados.csv', "r") as csvfile:
-    spamreader = csv.reader(csvfile, delimiter=',')
-    for row in spamreader:
-        agregar_arista(tiempos,row[0],row[1],int(row[2]))
-        """
+    for v in ver_vertices(grafo):
+        for w in ver_adyacentes(grafo,v):
+            grados[w] += 1
 
-"""
-precios = crear_grafo()
+    cola = []
 
-with open('vuelos.csv', "r") as csvfile:
-    spamreader = csv.reader(csvfile, delimiter=',')
-    for row in spamreader:
-        agregar_vertice(precios,row[0])
-        agregar_vertice(precios,row[1])
+    for v in ver_vertices(grafo):
+        if grados[v] == 0:
+            cola.append(v)
 
-with open('vuelos.csv', "r") as csvfile:
-    spamreader = csv.reader(csvfile, delimiter=',')
-    for row in spamreader:
-        agregar_arista(precios,row[0],row[1],int(row[3]))
+    resultado = []
 
-print(BFS(precios,"SAN"))
-"""
-"""
-tiempos = crear_grafo()
+    while len(cola) != 0:
+        v = cola.pop(0)
+        resultado.append(v)
+        for w in ver_adyacentes(grafo,v):
+            grados[w] -= 1
+            if grados[w] == 0:
+                cola.append(w)
 
-
-cont_atl=0
-cont_ord=0
-cont_lax=0
-cont_dfw=0
-cont_den=0
-
-with open('vuelos.csv',"r") as csvfile:
-    spamreader = csv.reader(csvfile,delimiter=',')
-    for row in spamreader:
-        agregar_vertice(tiempos,row[0])
-        agregar_vertice(tiempos,row[1])
-        # if (row[0] or row[1]) == "ATL":
-        #     cont_atl += 1
-        # elif (row[0] or row[1]) == "ORD":
-        #     cont_ord += 1
-        # elif (row[0] or row[1]) == "LAX":
-        #     cont_lax += 1
-        # elif (row[0] or row[1]) == "DFW":
-        #     cont_dfw += 1
-        # elif (row[0] or row[1]) == "DEN":
-        #     cont_den += 1
-        # totalvuelos += int(row[4])
-
-# print(cont_atl)
-# print(cont_ord)
-# print(cont_lax)
-# print(cont_dfw)
-# print(totalvuelos)
-
-
-with open('vuelos.csv', "r") as csvfile:
-    spamreader = csv.reader(csvfile, delimiter=',')
-    for row in spamreader:
-        agregar_arista(tiempos,row[0],row[1],1/int(row[4]))
-
-p,di = dijkstra(tiempos,"JFK")
-o = ordenar_vertices(tiempos,di)
-print(o)
-
-c = centralidad(tiempos)
-# print(c)
-def ord(dixi):
-    lista = []
-    for key in dixi:
-        lista.append((key,dixi[key]))
-
-    lista.sort(key=operator.itemgetter(1),reverse=True)
-    return lista
-
-print(ord(c))
-"""
-
-"""
-print(camino_dist_minimo(tiempos,"SAN","JFK"))
-print(camino_dist_minimo(tiempos,"SAN","LGA"))
-print(camino_dist_minimo(tiempos,"CLD","JFK"))
-print(camino_dist_minimo(tiempos,"CLD","LGA"))
-"""
-"""
-print(camino_minimo(precios,"SAN","JFK"))
-print(camino_minimo(precios,"SAN","LGA"))
-print(camino_minimo(precios,"CLD","JFK"))
-print(camino_minimo(precios,"CLD","LGA"))
-
-print(distancia_minima(precios,"LAS","MIA"))
-"""
-
-"""
-lista=[]
-
-lista.append(camino_dist_minimo(precios,"SAN","JFK"))
-lista.append(camino_dist_minimo(precios,"SAN","LGA"))
-lista.append(camino_dist_minimo(precios,"CLD","JFK"))
-lista.append(camino_dist_minimo(precios,"CLD","LGA"))
-
-print(min(lista,key=operator.itemgetter(1)))
-"""
+    if len(resultado) == len(grafo):
+        return resultado
+    else:
+        return None
