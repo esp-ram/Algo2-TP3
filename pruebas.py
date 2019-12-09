@@ -33,9 +33,17 @@ def recorrida(grafo, lista, inicio, longMaximo, longActual,resultado):
 
 
     completo = True
+    i = 0
     for item in ver_vertices(grafo):
         if item not in lista:
             completo = False
+            i += 1
+
+    # 164 es el minimo de costo minimo de vuelos_inventados
+    # si la cantidad de vuelos que faltan multiplicado por el costo minimo igualmente se
+    # excede del maximo se descarta
+    if ((i-1)*164 + longActual) >= longMaximo[len(longMaximo)-1]:
+        return False
 
 
     if completo == True:
@@ -75,7 +83,7 @@ def N_Lugares(grafo, final, inicio, cantidad, lista, n,resultado):
             continue
 
 
-"""
+
 lista = []
 respuesta = []
 largos = []
@@ -83,11 +91,12 @@ lista.append("BAT")
 largos.append(total*2)
 recorrida(tiempos,lista,"BAT",largos,0,respuesta)
 print("Mejor ruta: {}, Costo: {}".format(respuesta[len(respuesta)-1],largos[len(largos)-1]))
+
+
 """
-
-
 l1 = []
 l1.append("BAT")
 r1 = []
 print(N_Lugares(tiempos,"BAT","BAT",5,l1,0,r1))
 print(r1)
+"""
