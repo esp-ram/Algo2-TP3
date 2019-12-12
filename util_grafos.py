@@ -92,7 +92,6 @@ def ordenar_vertices(graf,dicc_distancia):
         lista.append((key,dicc_distancia[key]))
 
     lista.sort(key=operator.itemgetter(1),reverse=True)
-    # print(lista)
     listaref = []
     for item in lista:
         listaref.append(item[0])

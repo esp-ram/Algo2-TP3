@@ -126,8 +126,6 @@ dicc = {}
 for vertice in ver_vertices(tiempos):
     dicc[vertice] = factor
 
-# for i in range(100):
-#     pagerank(tiempos,dicc)
 lista_diccs = []
 lista_diccs.append(dicc)
 i=0
@@ -150,3 +148,17 @@ for key in dicc:
 li.sort(key = operator.itemgetter(1))
 
 print(li)
+
+"""
+for i in range(len(copia)):
+    copia[i][2] = (int(copia[i][2]) + 0)
+copia.sort(key = operator.itemgetter(2))
+
+lista = []
+lista.append(camino_dist_minimo(tiempos,"SAN","JFK"))
+lista.append(camino_dist_minimo(tiempos,"SAN","LGA"))
+lista.append(camino_dist_minimo(tiempos,"CLD","JFK"))
+lista.append(camino_dist_minimo(tiempos,"CLD","LGA"))
+print(min(lista,key=operator.itemgetter(1)))
+print(lista)
+"""
