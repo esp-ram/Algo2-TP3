@@ -245,9 +245,42 @@ def itinerario(archivo,grafo,archivoAero):
     itinerario_aux(copia[0],listaDependencias,grafo,archivoAero)
 
 
+def escritura_ubicacion(aeropuerto,coord,arch):
+    arch.write('\t\t<Placemark>\n\t\t\t<name>{}</name>\n\t\t\t<Point>\n\t\t\t\t<coordinates>{}, {}</coordinates>\n\t\t\t</Point>\n\t\t</Placemark>\n\n'.format(aeropuerto,coord[0],coord[1]))
 
-def importar_kml(archivo,last):
-    pass
+def escritura_traza(coord0,coord1,arch):
+    arch.write('\t\t<Placemark>\n\t\t\t<LineString>\n\t\t\t\t<coordinates>{}, {} {}, {}</coordinates>\n\t\t\t</LineString>\n\t\t</Placemark>\n\n'.format(coord0[0],coord0[1],coord1[0],coord1[1]))
+
+def escritura_cierre(arch):
+    arch.write('\t</Document>\n</kml>')
+
+def escritura_encabezado(arch):
+    arch.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+    arch.write('<kml xmlns="http://www.opengis.net/kml/2.2">\n\t<Document>\n')
+    arch.write('\t\t<name>KML de ejemplo</name>\n\t\t<description>Un ejemplo introductorio.</description>\n\n')
+
+
+def escritura_kml(ubicaciones,recorrido,ruta):
+    archivo = open(ruta,"w")
+    escritura_encabezado(archivo)
+    for key in ubicaciones.keys():
+        escritura_ubicacion(key,ubicaciones[key],archivo)
+
+    for i in range(len(recorrido)-1):
+        escritura_traza(ubicaciones[recorrido[i]],ubicaciones[recorrido[i+1]],archivo)
+
+    escritura_cierre(archivo)
+
+    archivo.close()
+
+def exportar_kml(archivo,last,aeropuertos):
+    coordenadas = {}
+    for item in last:
+        for ciudad in aeropuertos.keys():
+            if item in aeropuertos[ciudad].keys():
+                coordenadas[item] = aeropuertos[ciudad][item]
+
+    escritura_kml(coordenadas,last,archivo)
 
 
 
@@ -283,8 +316,10 @@ def menu(archivoAero,archivoVuelos):
 
 
     # itinerario("itinerario_ejemplo.csv",grafoTiempos,copiaAero)
-    entrada = input()
-    # entrada = ""
+    # print(copiaAero)
+    exportar_kml("kmtest.txt",["SAN","ABQ","HOU","AUS","LAX","BNA","SAN"],copiaAero)
+    # entrada = input()
+    entrada = ""
     ultimaRespuesta = []
     while(len(entrada) > 0):
         try:
@@ -324,7 +359,8 @@ def menu(archivoAero,archivoVuelos):
                 itinerario(opciones[0],grafoPrecios,copiaAero)
             elif len(opciones) == 1 and comando == "exportar_kml":
                 print("entra a kml")
-                importar_kml(opciones[0],ultimaRespuesta)
+                if len(ultimaRespuesta != 0):
+                    exportar_kml(opciones[0],ultimaRespuesta)
             else:
                 print("opcion mala")
         # print(capitalize(opciones[1]))
