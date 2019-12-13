@@ -166,6 +166,7 @@ def orden_topologico(grafo):
         if grados[v] == 0:
             cola.append(v)
 
+    # print(grados)
     resultado = []
 
     while len(cola) != 0:

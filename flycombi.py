@@ -7,6 +7,14 @@ COMANDOS_DISPONIBLES = ["camino_mas","camino_escalas","pagerank","centralidad"]
 
 
 
+def formato_flechas(texto):
+    for i in range(len(texto)):
+        print(texto[i],end = " ")
+        if i != len(texto)-1 :
+            print("->",end = " ")
+    print()
+
+
 def listar_operaciones():
     print("camino_mas")
     print("camino_escalas")
@@ -43,12 +51,15 @@ def camino_mas(modo,origen,destino,grafoPrecios,grafoTiempos,vuelos):
     elif modo == "rapido":
         recorrido = camino_mas_ops(origen,destino,grafoTiempos,vuelos)
 
+    formato_flechas(recorrido[0])
+    """
     for i in range(len(recorrido[0])):
         print(recorrido[0][i],end = " ")
         if i != len(recorrido[0])-1 :
             print("->",end = " ")
     print()
-
+    """
+    return recorrido[0]
 
 
 def camino_escalas(origen,destino,grafo,aeros):
@@ -73,12 +84,15 @@ def camino_escalas(origen,destino,grafo,aeros):
     while recorrido[0] != elegido[0]:
         recorrido.insert(0,padres[recorrido[0]])
 
+    formato_flechas(recorrido)
+    """
     for i in range(len(recorrido)):
         print(recorrido[i],end = " ")
         if i != len(recorrido)-1 :
             print("->",end = " ")
     print()
-
+    """
+    return recorrido
 
 
 def pagerank_aux(grafo,dict):
@@ -164,9 +178,76 @@ def vacaciones(origen,k,grafo,aeros):
             break
         resParciales.pop(0)
 
-    # TODO: formato de print
-    # REVIEW: return en caso de que no haya camino
-    print(resultad)
+    formato_flechas(resultad[0])
+    return resultad[0]
+
+# TODO: guardar en .csv
+def nueva_aerolinea(archivo,grafo,copiaVuelos):
+    inicio = "JFK" # TODO: elegir un vertice random
+    resultado = prim(grafo,inicio)
+    vuelos = []
+    for punto in ver_vertices(resultado):
+        for vertice in ver_adyacentes(resultado,punto):
+            for linea in copiaVuelos:
+                if ((linea[0] == punto and linea[1] == vertice) or (linea[1] == punto and linea[0] == vertice)):
+                    if linea not in vuelos:
+                        vuelos.append(linea)
+
+    for item in vuelos:
+        print(item)
+    print(len(vuelos))
+
+
+def itinerario_aux(ciudades,dependencias,grafo,archivoAero):
+    orden = crear_grafo()
+    for ciudad in ciudades:
+        agregar_vertice(orden,ciudad)
+
+    for depende in dependencias:
+        agregar_arista_dir(orden,depende[0],depende[1])
+
+    ordenRecorrido = orden_topologico(orden)
+
+    vuelos = []
+
+    for i in range(len(ordenRecorrido)-1):
+        lista = []
+        airSalida = obtener_aeropuertos(ordenRecorrido[i],archivoAero)
+        airLlegada = obtener_aeropuertos(ordenRecorrido[i+1],archivoAero)
+        for aeroS in airSalida:
+            for aeroL in airLlegada:
+                c,d = camino_dist_minimo(grafo,aeroS,aeroL)
+                lista.append((c,d))
+        vuelos.append(min(lista,key=operator.itemgetter(1)))
+
+    for rec in vuelos:
+        formato_flechas(rec[0])
+
+
+def itinerario(archivo,grafo,archivoAero):
+    if (os.path.isfile(archivo) == False):
+        return False
+
+    copia = []
+    with open(archivo,"r") as datos:
+        lector = csv.reader(datos,delimiter = ',')
+        for row in lector:
+            copia.append(row)
+
+    listaDependencias = []
+    for i in range(1,len(copia)):
+        listaDependencias.append(copia[i])
+
+
+    for ciudad in copia[0]:
+        print("{},".format(ciudad),end = ' ')
+    print()
+    itinerario_aux(copia[0],listaDependencias,grafo,archivoAero)
+
+
+
+def importar_kml(archivo,last):
+    pass
 
 
 
@@ -201,30 +282,49 @@ def menu(archivoAero,archivoVuelos):
             agregar_arista(grafoPrecios,row[0],row[1],int(row[3]))
 
 
-
+    # itinerario("itinerario_ejemplo.csv",grafoTiempos,copiaAero)
     entrada = input()
     # entrada = ""
+    ultimaRespuesta = []
     while(len(entrada) > 0):
         try:
             comando,opciones = entrada.split(" ",1)
         except Exception as e:
-            print("Exception")
+            print("ERROR")
         else:
-            print(comando)
+            # print(comando)
             opciones = opciones.split(",")
 
             if len(opciones) == 3 and comando == "camino_mas":
                 print("entra a camino_mas")
-                camino_mas(opciones[0],opciones[1],opciones[2],grafoPrecios,grafoTiempos,copiaAero)
+                resp = camino_mas(opciones[0],opciones[1],opciones[2],grafoPrecios,grafoTiempos,copiaAero)
+                if len(ultimaRespuesta) != 0:
+                    ultimaRespuesta.pop()
+                ultimaRespuesta.append(resp)
             elif len(opciones) == 2 and comando == "camino_escalas":
                 print("entra a camino_escalas")
-                camino_escalas(opciones[0],opciones[1],grafoPrecios,copiaAero)
+                resp = camino_escalas(opciones[0],opciones[1],grafoPrecios,copiaAero)
+                if len(ultimaRespuesta) != 0:
+                    ultimaRespuesta.pop()
+                ultimaRespuesta.append(resp)
             elif len(opciones) == 1 and comando == "pagerank":
                 print("entra a pagerank")
                 pagerank(grafoPrecios,opciones[0])
             elif len(opciones) == 2 and comando == "vacaciones":
                 print("entra a vacaciones")
-                vacaciones(opciones[0],opciones[1],grafoPrecios,copiaAero)
+                resp = vacaciones(opciones[0],opciones[1],grafoPrecios,copiaAero)
+                if len(ultimaRespuesta) != 0:
+                    ultimaRespuesta.pop()
+                ultimaRespuesta.append(resp)
+            elif len(opciones) == 1 and comando == "nueva_aerolinea":
+                print("entra a nueva_aerolinea")
+                nueva_aerolinea(opciones[0],grafoPrecios,copiaVuelos)
+            elif len(opciones) == 1 and comando == "itinerario":
+                print("entra a itinerario")
+                itinerario(opciones[0],grafoPrecios,copiaAero)
+            elif len(opciones) == 1 and comando == "exportar_kml":
+                print("entra a kml")
+                importar_kml(opciones[0],ultimaRespuesta)
             else:
                 print("opcion mala")
         # print(capitalize(opciones[1]))
