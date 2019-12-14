@@ -4,7 +4,7 @@ from util_grafos import *
 import csv
 import sys
 import os
-COMANDOS_DISPONIBLES = ["camino_mas","camino_escalas","pagerank","centralidad","nueva_aerolinea","vacaciones","itinerario","exportar_kml"]
+COMANDOS_DISPONIBLES = ["camino_mas","camino_escalas","pagerank","centralidad","nueva_aerolinea","vacaciones","itinerario","exportar_kml","recorrer_mundo"]
 AMORTIGUACION = 0.85
 PRECISION = 0.00000000000000005
 
@@ -42,7 +42,6 @@ def camino_mas_ops(origen,destino,grafo,archivoAero):
     return min(resultados,key=operator.itemgetter(1))
 
 
-# REVIEW: verificar si las ciudades existen
 def camino_mas(modo,origen,destino,grafoPrecios,grafoTiempos,vuelos):
     if (modo != "barato") and (modo != "rapido"):# or origen not in lista_ciudades or destino not in lista_ciudades:
         return False
@@ -52,13 +51,6 @@ def camino_mas(modo,origen,destino,grafoPrecios,grafoTiempos,vuelos):
         recorrido = camino_mas_ops(origen,destino,grafoTiempos,vuelos)
 
     formato_flechas(recorrido[0])
-    """
-    for i in range(len(recorrido[0])):
-        print(recorrido[0][i],end = " ")
-        if i != len(recorrido[0])-1 :
-            print("->",end = " ")
-    print()
-    """
     return recorrido[0]
 
 
@@ -85,13 +77,6 @@ def camino_escalas(origen,destino,grafo,aeros):
         recorrido.insert(0,padres[recorrido[0]])
 
     formato_flechas(recorrido)
-    """
-    for i in range(len(recorrido)):
-        print(recorrido[i],end = " ")
-        if i != len(recorrido)-1 :
-            print("->",end = " ")
-    print()
-    """
     return recorrido
 
 
@@ -135,10 +120,7 @@ def pagerank(grafo,k):
 
     resultado.sort(key = operator.itemgetter(1),reverse = True)
 
-    # TODO:  formato de print
     limite = min(int(k),len(resultado))
-
-
     for i in range(limite):
         print(resultado[i][0],end = "")
         if i != limite-1 :
@@ -286,7 +268,6 @@ def exportar_kml(archivo,last,aeropuertos):
     escritura_kml(coordenadas,last,archivo)
 
 
-# TODO: formato print
 def centralidad_B(n,grafo):
     centro = centralidad(grafo)
     lista = []
@@ -302,6 +283,52 @@ def centralidad_B(n,grafo):
             print(",",end = " ")
     print()
 
+
+def recorrida(grafo, lista, inicio, longMaximo, longActual,resultado,minimo):
+    if longActual > longMaximo[len(longMaximo)-1]:
+        return False
+
+    completo = True
+    faltantes = 0
+    for item in ver_vertices(grafo):
+        if item not in lista:
+            completo = False
+            faltantes += 1
+
+    if ((faltantes)*minimo + longActual) >= longMaximo[len(longMaximo)-1]:
+        return False
+
+    if completo == True:
+        pap = lista.copy()
+        longMaximo.append(longActual)
+        resultado.append(pap)
+        return
+
+    for vertice in ver_adyacentes(grafo,inicio):
+        lista.append(vertice)
+        if recorrida(grafo,lista,vertice,longMaximo,longActual+obtener_peso(grafo,inicio,vertice),resultado,minimo) != True:
+            lista.pop()
+            continue
+        longMaximo = longActual+obtener_peso(grafo,inicio,vertice)
+
+
+
+def recorrer_mundo(ciudadInicio,grafo,aeros,vuelos):
+    recorridoParcial = []
+    resultados = []
+    largos = []
+    aeropuertos = obtener_aeropuertos(ciudadInicio,aeros)
+    minAbs = arista_minima(grafo)
+    aproximacionLong = 5000 #falta
+    largos.append(aproximacionLong)
+    for pista in aeropuertos:
+        recorridoParcial.append(pista)
+        recorrida(grafo,recorridoParcial,pista,largos,0,resultados,minAbs)
+        recorridoParcial.pop()
+
+    formato_flechas(resultados[len(resultados)-1])
+    print("Costo:",largos[len(largos)-1])
+    return resultados[len(resultados)-1]
 
 
 def menu(archivoAero,archivoVuelos):
@@ -343,6 +370,7 @@ def menu(archivoAero,archivoVuelos):
     # print(copiaAero)
     # centralidad_B(5,grafoFrecuencias)
     # exportar_kml("kmtest.txt",["SAN","ABQ","HOU","AUS","LAX","BNA","SAN"],copiaAero)
+    # recorrer_mundo("Gotica",grafoTiempos,copiaAero,copiaVuelos)
     try:
         entrada = input()
     except EOFError:
@@ -393,11 +421,17 @@ def menu(archivoAero,archivoVuelos):
             elif len(opciones) == 1 and comando == "centralidad":
                 centralidad_B(int(opciones[0]),grafoFrecuencias)
 
+            elif len(opciones) == 1 and comando == "recorrer_mundo":
+                resp = recorrer_mundo(opciones[0],grafoTiempos,copiaAero,copiaVuelos)
+                if len(ultimaRespuesta) != 0:
+                    ultimaRespuesta.pop()
+                ultimaRespuesta.append(resp)
+
             else:
                 print("opcion mala")
         # print(capitalize(opciones[1]))
         # print(opciones)
-        print()
+        # print()
         try:
             entrada = input()
         except EOFError:

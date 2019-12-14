@@ -17,20 +17,19 @@ def dijkstra(grafo,origen):
 
     cola = []
 
-    cola.append((distancia[origen],origen))
-
+    cola.append([distancia[origen],origen])
     while len(cola) != 0:
+        cola.sort(key=operator.itemgetter(0), reverse = False)
         dist,vertice = cola.pop(0)
         for w in ver_adyacentes(grafo,vertice):
             if distancia[vertice] + obtener_peso(grafo,vertice,w) < distancia[w]:
                 distancia[w] = distancia[vertice] + obtener_peso(grafo,vertice,w)
                 padre[w] = vertice
-                cola.append((distancia[w],w))
+                cola.append([distancia[w],w])
 
     return padre,distancia
 
 
-# REVIEW: verificar que origen/destino estan en el diccionario
 def camino_dist_minimo(grafo,origen,destino):
     fath,dist = dijkstra(grafo,origen)
     camino = [destino]
@@ -166,7 +165,6 @@ def orden_topologico(grafo):
         if grados[v] == 0:
             cola.append(v)
 
-    # print(grados)
     resultado = []
 
     while len(cola) != 0:
@@ -181,3 +179,11 @@ def orden_topologico(grafo):
         return resultado
     else:
         return None
+
+
+def arista_minima(grafo):
+    aristas = []
+    for vertice in ver_vertices(grafo):
+        for ady in ver_adyacentes(grafo,vertice):
+            aristas.append(grafo[vertice][ady])
+    return min(aristas)
