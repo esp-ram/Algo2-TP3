@@ -248,12 +248,17 @@ def vacaciones(origen,k,grafo,aeros):
         return False
     aeroOrigen = obtener_aeropuertos(origen.title(),aeros)
     resParciales = []
+    cent = centralidad(grafo)
+    aeroOrdenado = []
+    for ciudad in aeroOrigen:
+        aeroOrdenado.append((ciudad,cent[ciudad]))
+    aeroOrdenado.sort(key = operator.itemgetter(1),reverse = True)
     resultad = []
-    for item in aeroOrigen:
-        resParciales.append(item)
-        N_Lugares(grafo,item,item,int(k),resParciales,0,resultad)
+    for item in aeroOrdenado:
+        resParciales.append(item[0])
+        N_Lugares(grafo,item[0],item[0],int(k)-1,resParciales,0,resultad)
         if len(resultad) != 0:
-            resultad[0].append(item)
+            resultad[0].append(item[0])
             break
         resParciales.pop(0)
 
