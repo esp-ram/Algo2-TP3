@@ -8,6 +8,7 @@ COMANDOS_DISPONIBLES = ["camino_mas","camino_escalas","pagerank","centralidad","
 AMORTIGUACION = 0.85
 PRECISION = 0.00000000000000005
 
+####### FUNCIONES AUXILIARES
 
 def formato_flechas(texto):
     for i in range(len(texto)):
@@ -17,9 +18,12 @@ def formato_flechas(texto):
     print()
 
 
-def listar_operaciones():
-    for op in COMANDOS_DISPONIBLES:
-        print(op)
+def formato_comas(texto):
+    for i in range(len(texto)):
+        print(texto[i],end = "")
+        if i != len(texto)-1 :
+            print(",",end = " ")
+    print()
 
 
 def obtener_aeropuertos(ciudad,archivo):
@@ -42,8 +46,130 @@ def camino_mas_ops(origen,destino,grafo,archivoAero):
     return min(resultados,key=operator.itemgetter(1))
 
 
+def pagerank_aux(grafo,dict):
+    diccionario = dict.copy()
+    tamano = len(ver_vertices(grafo))
+    for vertice in ver_vertices(grafo):
+        total = 0
+        for adyacente in ver_adyacentes(grafo,vertice):
+            total += (diccionario[adyacente] / (len(ver_adyacentes(grafo,adyacente))))
+        diccionario[vertice] = ((1-AMORTIGUACION)/tamano) + (AMORTIGUACION)*total
+    return diccionario
+
+
+def N_Lugares(grafo, final, inicio, cantidad, lista, n,resultado):
+    if n == cantidad:
+        if lista[len(lista)-1] in ver_adyacentes(grafo,final):
+            pap = lista.copy()
+            resultado.append(pap)
+            return lista
+        return False
+
+    for vertex in ver_adyacentes(grafo,inicio):
+        if len(resultado) != 0:
+            return
+        if vertex in lista:
+            continue
+        lista.append(vertex)
+        if N_Lugares(grafo,final,vertex,cantidad,lista,n+1,resultado) != True:
+            lista.pop()
+            continue
+
+
+def itinerario_aux(ciudades,dependencias,grafo,archivoAero):
+    orden = crear_grafo()
+    for ciudad in ciudades:
+        agregar_vertice(orden,ciudad)
+
+    for depende in dependencias:
+        agregar_arista_dir(orden,depende[0],depende[1])
+
+    ordenRecorrido = orden_topologico(orden)
+
+    vuelos = []
+
+    for i in range(len(ordenRecorrido)-1):
+        lista = []
+        airSalida = obtener_aeropuertos(ordenRecorrido[i],archivoAero)
+        airLlegada = obtener_aeropuertos(ordenRecorrido[i+1],archivoAero)
+        for aeroS in airSalida:
+            for aeroL in airLlegada:
+                c,d = camino_dist_minimo(grafo,aeroS,aeroL)
+                lista.append((c,d))
+        vuelos.append(min(lista,key=operator.itemgetter(1)))
+
+    for rec in vuelos:
+        formato_flechas(rec[0])
+
+
+def escritura_ubicacion(aeropuerto,coord,arch):
+    arch.write('\t\t<Placemark>\n\t\t\t<name>{}</name>\n\t\t\t<Point>\n\t\t\t\t<coordinates>{}, {}</coordinates>\n\t\t\t</Point>\n\t\t</Placemark>\n\n'.format(aeropuerto,coord[0],coord[1]))
+
+def escritura_traza(coord0,coord1,arch):
+    arch.write('\t\t<Placemark>\n\t\t\t<LineString>\n\t\t\t\t<coordinates>{}, {} {}, {}</coordinates>\n\t\t\t</LineString>\n\t\t</Placemark>\n\n'.format(coord0[0],coord0[1],coord1[0],coord1[1]))
+
+def escritura_cierre(arch):
+    arch.write('\t</Document>\n</kml>')
+
+def escritura_encabezado(arch):
+    arch.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+    arch.write('<kml xmlns="http://www.opengis.net/kml/2.2">\n\t<Document>\n')
+    arch.write('\t\t<name>KML de ejemplo</name>\n\t\t<description>Un ejemplo introductorio.</description>\n\n')
+
+
+def escritura_kml(ubicaciones,recorrido,ruta):
+    archivo = open(ruta,"w")
+    escritura_encabezado(archivo)
+    for key in ubicaciones.keys():
+        escritura_ubicacion(key,ubicaciones[key],archivo)
+
+    for i in range(len(recorrido)-1):
+        escritura_traza(ubicaciones[recorrido[i]],ubicaciones[recorrido[i+1]],archivo)
+
+    escritura_cierre(archivo)
+
+    archivo.close()
+
+
+def recorrida(grafo, lista, inicio, longMaximo, longActual,resultado,minimo):
+    if longActual > longMaximo[len(longMaximo)-1]:
+        return False
+
+    completo = True
+    faltantes = 0
+    for item in ver_vertices(grafo):
+        if item not in lista:
+            completo = False
+            faltantes += 1
+
+    if ((faltantes)*minimo + longActual) >= longMaximo[len(longMaximo)-1]:
+        return False
+
+    if completo == True:
+        pap = lista.copy()
+        longMaximo.append(longActual)
+        resultado.append(pap)
+        return
+
+    for vertice in ver_adyacentes(grafo,inicio):
+        lista.append(vertice)
+        if recorrida(grafo,lista,vertice,longMaximo,longActual+obtener_peso(grafo,inicio,vertice),resultado,minimo) != True:
+            lista.pop()
+            continue
+        longMaximo = longActual+obtener_peso(grafo,inicio,vertice)
+
+
+
+#########FUNCIONES PRINCIPALES
+
+
+def listar_operaciones():
+    for com in COMANDOS_DISPONIBLES:
+        print(com)
+
+
 def camino_mas(modo,origen,destino,grafoPrecios,grafoTiempos,vuelos):
-    if (modo != "barato") and (modo != "rapido"):# or origen not in lista_ciudades or destino not in lista_ciudades:
+    if (modo != "barato") and (modo != "rapido"):
         return False
     if modo == "barato":
         recorrido = camino_mas_ops(origen,destino,grafoPrecios,vuelos)
@@ -78,17 +204,6 @@ def camino_escalas(origen,destino,grafo,aeros):
 
     formato_flechas(recorrido)
     return recorrido
-
-
-def pagerank_aux(grafo,dict):
-    diccionario = dict.copy()
-    tamano = len(ver_vertices(grafo))
-    for vertice in ver_vertices(grafo):
-        total = 0
-        for adyacente in ver_adyacentes(grafo,vertice):
-            total += (diccionario[adyacente] / (len(ver_adyacentes(grafo,adyacente))))
-        diccionario[vertice] = ((1-AMORTIGUACION)/tamano) + (AMORTIGUACION)*total
-    return diccionario
 
 
 def pagerank(grafo,k):
@@ -128,26 +243,6 @@ def pagerank(grafo,k):
     print()
 
 
-
-def N_Lugares(grafo, final, inicio, cantidad, lista, n,resultado):
-    if n == cantidad:
-        if lista[len(lista)-1] in ver_adyacentes(grafo,final):
-            pap = lista.copy()
-            resultado.append(pap)
-            return lista
-        return False
-
-    for vertex in ver_adyacentes(grafo,inicio):
-        if len(resultado) != 0:
-            return
-        if vertex in lista:
-            continue
-        lista.append(vertex)
-        if N_Lugares(grafo,final,vertex,cantidad,lista,n+1,resultado) != True:
-            lista.pop()
-            continue
-
-
 def vacaciones(origen,k,grafo,aeros):
     if (k.isdigit() == False) and int(k) <= 0:
         return False
@@ -155,7 +250,6 @@ def vacaciones(origen,k,grafo,aeros):
     resParciales = []
     resultad = []
     for item in aeroOrigen:
-        print(item)
         resParciales.append(item)
         N_Lugares(grafo,item,item,int(k),resParciales,0,resultad)
         if len(resultad) != 0:
@@ -168,7 +262,7 @@ def vacaciones(origen,k,grafo,aeros):
 
 
 def nueva_aerolinea(archivo,grafo,copiaVuelos):
-    inicio = "JFK" # TODO: elegir un vertice random
+    inicio = random.choice(ver_vertices(grafo))
     resultado = prim(grafo,inicio)
     vuelos = []
     for punto in ver_vertices(resultado):
@@ -182,31 +276,7 @@ def nueva_aerolinea(archivo,grafo,copiaVuelos):
         for item in vuelos:
             arch.write("{},{},{},{},{}\n".format(item[0],item[1],item[2],item[3],item[4]))
 
-
-def itinerario_aux(ciudades,dependencias,grafo,archivoAero):
-    orden = crear_grafo()
-    for ciudad in ciudades:
-        agregar_vertice(orden,ciudad)
-
-    for depende in dependencias:
-        agregar_arista_dir(orden,depende[0],depende[1])
-
-    ordenRecorrido = orden_topologico(orden)
-
-    vuelos = []
-
-    for i in range(len(ordenRecorrido)-1):
-        lista = []
-        airSalida = obtener_aeropuertos(ordenRecorrido[i],archivoAero)
-        airLlegada = obtener_aeropuertos(ordenRecorrido[i+1],archivoAero)
-        for aeroS in airSalida:
-            for aeroL in airLlegada:
-                c,d = camino_dist_minimo(grafo,aeroS,aeroL)
-                lista.append((c,d))
-        vuelos.append(min(lista,key=operator.itemgetter(1)))
-
-    for rec in vuelos:
-        formato_flechas(rec[0])
+    print("OK")
 
 
 def itinerario(archivo,grafo,archivoAero):
@@ -223,40 +293,10 @@ def itinerario(archivo,grafo,archivoAero):
     for i in range(1,len(copia)):
         listaDependencias.append(copia[i])
 
+    formato_comas(copia[0])
 
-    for ciudad in copia[0]:
-        print("{},".format(ciudad),end = ' ')
-    print()
     itinerario_aux(copia[0],listaDependencias,grafo,archivoAero)
 
-
-def escritura_ubicacion(aeropuerto,coord,arch):
-    arch.write('\t\t<Placemark>\n\t\t\t<name>{}</name>\n\t\t\t<Point>\n\t\t\t\t<coordinates>{}, {}</coordinates>\n\t\t\t</Point>\n\t\t</Placemark>\n\n'.format(aeropuerto,coord[0],coord[1]))
-
-def escritura_traza(coord0,coord1,arch):
-    arch.write('\t\t<Placemark>\n\t\t\t<LineString>\n\t\t\t\t<coordinates>{}, {} {}, {}</coordinates>\n\t\t\t</LineString>\n\t\t</Placemark>\n\n'.format(coord0[0],coord0[1],coord1[0],coord1[1]))
-
-def escritura_cierre(arch):
-    arch.write('\t</Document>\n</kml>')
-
-def escritura_encabezado(arch):
-    arch.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-    arch.write('<kml xmlns="http://www.opengis.net/kml/2.2">\n\t<Document>\n')
-    arch.write('\t\t<name>KML de ejemplo</name>\n\t\t<description>Un ejemplo introductorio.</description>\n\n')
-
-
-def escritura_kml(ubicaciones,recorrido,ruta):
-    archivo = open(ruta,"w")
-    escritura_encabezado(archivo)
-    for key in ubicaciones.keys():
-        escritura_ubicacion(key,ubicaciones[key],archivo)
-
-    for i in range(len(recorrido)-1):
-        escritura_traza(ubicaciones[recorrido[i]],ubicaciones[recorrido[i+1]],archivo)
-
-    escritura_cierre(archivo)
-
-    archivo.close()
 
 def exportar_kml(archivo,last,aeropuertos):
     coordenadas = {}
@@ -266,6 +306,7 @@ def exportar_kml(archivo,last,aeropuertos):
                 coordenadas[item] = aeropuertos[ciudad][item]
 
     escritura_kml(coordenadas,last,archivo)
+    print("OK")
 
 
 def centralidad_B(n,grafo):
@@ -277,40 +318,13 @@ def centralidad_B(n,grafo):
     lista.sort(key=operator.itemgetter(1),reverse=True)
     limite = min(len(lista),n)
 
+
+
     for i in range(limite):
         print(lista[i][0],end = "")
         if i != limite-1 :
             print(",",end = " ")
     print()
-
-
-def recorrida(grafo, lista, inicio, longMaximo, longActual,resultado,minimo):
-    if longActual > longMaximo[len(longMaximo)-1]:
-        return False
-
-    completo = True
-    faltantes = 0
-    for item in ver_vertices(grafo):
-        if item not in lista:
-            completo = False
-            faltantes += 1
-
-    if ((faltantes)*minimo + longActual) >= longMaximo[len(longMaximo)-1]:
-        return False
-
-    if completo == True:
-        pap = lista.copy()
-        longMaximo.append(longActual)
-        resultado.append(pap)
-        return
-
-    for vertice in ver_adyacentes(grafo,inicio):
-        lista.append(vertice)
-        if recorrida(grafo,lista,vertice,longMaximo,longActual+obtener_peso(grafo,inicio,vertice),resultado,minimo) != True:
-            lista.pop()
-            continue
-        longMaximo = longActual+obtener_peso(grafo,inicio,vertice)
-
 
 
 def recorrer_mundo(ciudadInicio,grafo,aeros,vuelos):
@@ -319,7 +333,7 @@ def recorrer_mundo(ciudadInicio,grafo,aeros,vuelos):
     largos = []
     aeropuertos = obtener_aeropuertos(ciudadInicio,aeros)
     minAbs = arista_minima(grafo)
-    aproximacionLong = 5000 #falta
+    aproximacionLong = costo_mst(grafo) * 2
     largos.append(aproximacionLong)
     for pista in aeropuertos:
         recorridoParcial.append(pista)
@@ -331,54 +345,13 @@ def recorrer_mundo(ciudadInicio,grafo,aeros,vuelos):
     return resultados[len(resultados)-1]
 
 
-def menu(archivoAero,archivoVuelos):
-    grafoTiempos = crear_grafo()
-    grafoPrecios = crear_grafo()
-    grafoFrecuencias = crear_grafo()
-    copiaAero = {}
-    copiaVuelos = []
-
-    with open(archivoAero,"r") as csvfile:
-        spamreader = csv.reader(csvfile, delimiter = ',')
-        for row in spamreader:
-            if row[0] in copiaAero:
-                copiaAero[row[0]][row[1]] = (row[2],row[3])
-            else:
-                copiaAero[row[0]] = {}
-                copiaAero[row[0]][row[1]] = (row[2],row[3])
-
-    with open(archivoVuelos, "r") as csvfile:
-        spamreader = csv.reader(csvfile, delimiter=',')
-        for row in spamreader:
-            agregar_vertice(grafoTiempos,row[0])
-            agregar_vertice(grafoTiempos,row[1])
-            agregar_vertice(grafoPrecios,row[0])
-            agregar_vertice(grafoPrecios,row[1])
-            agregar_vertice(grafoFrecuencias,row[0])
-            agregar_vertice(grafoFrecuencias,row[1])
-            copiaVuelos.append(row)
-
-    with open(archivoVuelos, "r") as csvfile:
-        spamreader = csv.reader(csvfile, delimiter=',')
-        for row in spamreader:
-            agregar_arista(grafoTiempos,row[0],row[1],int(row[2]))
-            agregar_arista(grafoPrecios,row[0],row[1],int(row[3]))
-            agregar_arista(grafoFrecuencias,row[0],row[1],1/int(row[4]))
-
-
-    # itinerario("itinerario_ejemplo.csv",grafoTiempos,copiaAero)
-    # print(copiaAero)
-    # centralidad_B(5,grafoFrecuencias)
-    # exportar_kml("kmtest.txt",["SAN","ABQ","HOU","AUS","LAX","BNA","SAN"],copiaAero)
-    # recorrer_mundo("Gotica",grafoTiempos,copiaAero,copiaVuelos)
+def menu(grafoTiempos,grafoPrecios,grafoFrecuencias,copiaAero,copiaVuelos):
     try:
         entrada = input()
     except EOFError:
         entrada = ""
-    # entrada = ""
     ultimaRespuesta = []
     while(len(entrada) > 0):
-        print(entrada)
         try:
             comando,opciones = entrada.split(" ",1)
         except Exception as e:
@@ -428,15 +401,50 @@ def menu(archivoAero,archivoVuelos):
                 ultimaRespuesta.append(resp)
 
             else:
-                print("opcion mala")
-        # print(capitalize(opciones[1]))
-        # print(opciones)
-        # print()
+                print("OPCION INCORRECTA")
+
         try:
             entrada = input()
         except EOFError:
             entrada = ""
 
+
+def procesar_archivos(archivoAero,archivoVuelos):
+    grafoTs = crear_grafo()
+    grafoPs = crear_grafo()
+    grafoFs = crear_grafo()
+    copiaAo = {}
+    copiaVs = []
+
+    with open(archivoAero,"r") as csvfile:
+        spamreader = csv.reader(csvfile, delimiter = ',')
+        for row in spamreader:
+            if row[0] in copiaAo:
+                copiaAo[row[0]][row[1]] = (row[2],row[3])
+            else:
+                copiaAo[row[0]] = {}
+                copiaAo[row[0]][row[1]] = (row[2],row[3])
+
+    with open(archivoVuelos, "r") as csvfile:
+        spamreader = csv.reader(csvfile, delimiter=',')
+        for row in spamreader:
+            agregar_vertice(grafoTs,row[0])
+            agregar_vertice(grafoTs,row[1])
+            agregar_vertice(grafoPs,row[0])
+            agregar_vertice(grafoPs,row[1])
+            agregar_vertice(grafoFs,row[0])
+            agregar_vertice(grafoFs,row[1])
+            copiaVs.append(row)
+
+    with open(archivoVuelos, "r") as csvfile:
+        spamreader = csv.reader(csvfile, delimiter=',')
+        for row in spamreader:
+            agregar_arista(grafoTs,row[0],row[1],int(row[2]))
+            agregar_arista(grafoPs,row[0],row[1],int(row[3]))
+            agregar_arista(grafoFs,row[0],row[1],1/int(row[4]))
+
+
+    menu(grafoTs,grafoPs,grafoFs,copiaAo,copiaVs)
 
 
 def Main():
@@ -446,7 +454,7 @@ def Main():
     t1 = os.path.isfile(sys.argv[2])
 
     if (t0,t1) == (True,True):
-        menu(sys.argv[1],sys.argv[2])
+        procesar_archivos(sys.argv[1],sys.argv[2])
 
 
 Main()

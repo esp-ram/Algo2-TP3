@@ -4,7 +4,7 @@ import operator
 import random
 
 
-# TODO: ordenar la cola en cada paso(simular el heap)
+
 def dijkstra(grafo,origen):
     distancia = {}
     padre = {}
@@ -187,3 +187,13 @@ def arista_minima(grafo):
         for ady in ver_adyacentes(grafo,vertice):
             aristas.append(grafo[vertice][ady])
     return min(aristas)
+
+
+def costo_mst(grafo):
+    mst = prim(grafo,random.choice(ver_vertices(grafo)))
+    total = 0
+    for ciudad in mst:
+        for ady in mst[ciudad]:
+            total += mst[ciudad][ady]
+
+    return total/2
