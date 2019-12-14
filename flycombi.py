@@ -1,10 +1,12 @@
+#!/usr/bin/python3
 from grafos import *
 from util_grafos import *
 import csv
 import sys
 import os
-COMANDOS_DISPONIBLES = ["camino_mas","camino_escalas","pagerank","centralidad"]
-
+COMANDOS_DISPONIBLES = ["camino_mas","camino_escalas","pagerank","centralidad","nueva_aerolinea","vacaciones","itinerario","exportar_kml"]
+AMORTIGUACION = 0.85
+PRECISION = 0.00000000000000005
 
 
 def formato_flechas(texto):
@@ -16,9 +18,8 @@ def formato_flechas(texto):
 
 
 def listar_operaciones():
-    print("camino_mas")
-    print("camino_escalas")
-    print("pagerank")
+    for op in COMANDOS_DISPONIBLES:
+        print(op)
 
 
 def obtener_aeropuertos(ciudad,archivo):
@@ -34,7 +35,6 @@ def camino_mas_ops(origen,destino,grafo,archivoAero):
     aeroOrigen = obtener_aeropuertos(origen,archivoAero)
     aeroDestino = obtener_aeropuertos(destino,archivoAero)
     resultados = []
-    # REVIEW: que pasa si no hay caminos?
     for salida in aeroOrigen:
         for llegada in aeroDestino:
             resultados.append(camino_dist_minimo(grafo,salida,llegada))
@@ -102,7 +102,7 @@ def pagerank_aux(grafo,dict):
         total = 0
         for adyacente in ver_adyacentes(grafo,vertice):
             total += (diccionario[adyacente] / (len(ver_adyacentes(grafo,adyacente))))
-        diccionario[vertice] = ((1-0.85)/tamano) + (0.85)*total
+        diccionario[vertice] = ((1-AMORTIGUACION)/tamano) + (AMORTIGUACION)*total
     return diccionario
 
 
@@ -123,7 +123,7 @@ def pagerank(grafo,k):
         listaParciales.append(pagerank_aux(grafo,listaParciales[i]))
         i += 1
         for vertice in ver_vertices(grafo):
-            if abs(listaParciales[i][vertice] - listaParciales[i-1][vertice]) < 0.00000000000000004:
+            if abs(listaParciales[i][vertice] - listaParciales[i-1][vertice]) < PRECISION:
                 completado = True
             else:
                 completado = False
@@ -135,10 +135,14 @@ def pagerank(grafo,k):
 
     resultado.sort(key = operator.itemgetter(1),reverse = True)
 
-    # REVIEW: cuidado rango de k
     # TODO:  formato de print
-    for j in range(int(k)):
-        print(resultado[j][0], end = " ")
+    limite = min(int(k),len(resultado))
+
+
+    for i in range(limite):
+        print(resultado[i][0],end = "")
+        if i != limite-1 :
+            print(",",end = " ")
     print()
 
 
@@ -162,7 +166,6 @@ def N_Lugares(grafo, final, inicio, cantidad, lista, n,resultado):
             continue
 
 
-
 def vacaciones(origen,k,grafo,aeros):
     if (k.isdigit() == False) and int(k) <= 0:
         return False
@@ -181,7 +184,7 @@ def vacaciones(origen,k,grafo,aeros):
     formato_flechas(resultad[0])
     return resultad[0]
 
-# TODO: guardar en .csv
+
 def nueva_aerolinea(archivo,grafo,copiaVuelos):
     inicio = "JFK" # TODO: elegir un vertice random
     resultado = prim(grafo,inicio)
@@ -193,9 +196,9 @@ def nueva_aerolinea(archivo,grafo,copiaVuelos):
                     if linea not in vuelos:
                         vuelos.append(linea)
 
-    for item in vuelos:
-        print(item)
-    print(len(vuelos))
+    with open(archivo,"w") as arch:
+        for item in vuelos:
+            arch.write("{},{},{},{},{}\n".format(item[0],item[1],item[2],item[3],item[4]))
 
 
 def itinerario_aux(ciudades,dependencias,grafo,archivoAero):
@@ -283,10 +286,24 @@ def exportar_kml(archivo,last,aeropuertos):
     escritura_kml(coordenadas,last,archivo)
 
 
+# TODO: formato print
+def centralidad_B(n,grafo):
+    centro = centralidad(grafo)
+    lista = []
+    for key in centro:
+        lista.append((key,centro[key]))
+
+    lista.sort(key=operator.itemgetter(1),reverse=True)
+    limite = min(len(lista),n)
+    for i in range(limite):
+        print(lista[i])
+
+
 
 def menu(archivoAero,archivoVuelos):
     grafoTiempos = crear_grafo()
     grafoPrecios = crear_grafo()
+    grafoFrecuencias = crear_grafo()
     copiaAero = {}
     copiaVuelos = []
 
@@ -306,6 +323,8 @@ def menu(archivoAero,archivoVuelos):
             agregar_vertice(grafoTiempos,row[1])
             agregar_vertice(grafoPrecios,row[0])
             agregar_vertice(grafoPrecios,row[1])
+            agregar_vertice(grafoFrecuencias,row[0])
+            agregar_vertice(grafoFrecuencias,row[1])
             copiaVuelos.append(row)
 
     with open(archivoVuelos, "r") as csvfile:
@@ -313,13 +332,15 @@ def menu(archivoAero,archivoVuelos):
         for row in spamreader:
             agregar_arista(grafoTiempos,row[0],row[1],int(row[2]))
             agregar_arista(grafoPrecios,row[0],row[1],int(row[3]))
+            agregar_arista(grafoFrecuencias,row[0],row[1],1/int(row[4]))
 
 
     # itinerario("itinerario_ejemplo.csv",grafoTiempos,copiaAero)
     # print(copiaAero)
-    exportar_kml("kmtest.txt",["SAN","ABQ","HOU","AUS","LAX","BNA","SAN"],copiaAero)
-    # entrada = input()
-    entrada = ""
+    # centralidad_B(5,grafoFrecuencias)
+    # exportar_kml("kmtest.txt",["SAN","ABQ","HOU","AUS","LAX","BNA","SAN"],copiaAero)
+    entrada = input()
+    # entrada = ""
     ultimaRespuesta = []
     while(len(entrada) > 0):
         try:
@@ -361,6 +382,9 @@ def menu(archivoAero,archivoVuelos):
                 print("entra a kml")
                 if len(ultimaRespuesta != 0):
                     exportar_kml(opciones[0],ultimaRespuesta)
+            elif len(opciones) == 1 and comando == "centralidad":
+                print("entra a centralidad")
+                centralidad_B(int(opciones[0]),grafoFrecuencias)
             else:
                 print("opcion mala")
         # print(capitalize(opciones[1]))
