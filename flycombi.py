@@ -295,8 +295,12 @@ def centralidad_B(n,grafo):
 
     lista.sort(key=operator.itemgetter(1),reverse=True)
     limite = min(len(lista),n)
+
     for i in range(limite):
-        print(lista[i])
+        print(lista[i][0],end = "")
+        if i != limite-1 :
+            print(",",end = " ")
+    print()
 
 
 
@@ -339,64 +343,71 @@ def menu(archivoAero,archivoVuelos):
     # print(copiaAero)
     # centralidad_B(5,grafoFrecuencias)
     # exportar_kml("kmtest.txt",["SAN","ABQ","HOU","AUS","LAX","BNA","SAN"],copiaAero)
-    entrada = input()
+    try:
+        entrada = input()
+    except EOFError:
+        entrada = ""
     # entrada = ""
     ultimaRespuesta = []
     while(len(entrada) > 0):
+        print(entrada)
         try:
             comando,opciones = entrada.split(" ",1)
         except Exception as e:
-            print("ERROR")
+            if entrada == "listar_operaciones":
+                listar_operaciones()
         else:
-            # print(comando)
             opciones = opciones.split(",")
 
             if len(opciones) == 3 and comando == "camino_mas":
-                print("entra a camino_mas")
                 resp = camino_mas(opciones[0],opciones[1],opciones[2],grafoPrecios,grafoTiempos,copiaAero)
                 if len(ultimaRespuesta) != 0:
                     ultimaRespuesta.pop()
                 ultimaRespuesta.append(resp)
+
             elif len(opciones) == 2 and comando == "camino_escalas":
-                print("entra a camino_escalas")
                 resp = camino_escalas(opciones[0],opciones[1],grafoPrecios,copiaAero)
                 if len(ultimaRespuesta) != 0:
                     ultimaRespuesta.pop()
                 ultimaRespuesta.append(resp)
+
             elif len(opciones) == 1 and comando == "pagerank":
-                print("entra a pagerank")
                 pagerank(grafoPrecios,opciones[0])
+
             elif len(opciones) == 2 and comando == "vacaciones":
-                print("entra a vacaciones")
                 resp = vacaciones(opciones[0],opciones[1],grafoPrecios,copiaAero)
                 if len(ultimaRespuesta) != 0:
                     ultimaRespuesta.pop()
                 ultimaRespuesta.append(resp)
+
             elif len(opciones) == 1 and comando == "nueva_aerolinea":
-                print("entra a nueva_aerolinea")
                 nueva_aerolinea(opciones[0],grafoPrecios,copiaVuelos)
+
             elif len(opciones) == 1 and comando == "itinerario":
-                print("entra a itinerario")
                 itinerario(opciones[0],grafoPrecios,copiaAero)
+
             elif len(opciones) == 1 and comando == "exportar_kml":
-                print("entra a kml")
-                if len(ultimaRespuesta != 0):
-                    exportar_kml(opciones[0],ultimaRespuesta)
+                if len(ultimaRespuesta) != 0:
+                    exportar_kml(opciones[0],ultimaRespuesta[0],copiaAero)
+
             elif len(opciones) == 1 and comando == "centralidad":
-                print("entra a centralidad")
                 centralidad_B(int(opciones[0]),grafoFrecuencias)
+
             else:
                 print("opcion mala")
         # print(capitalize(opciones[1]))
         # print(opciones)
-        entrada = input()
+        print()
+        try:
+            entrada = input()
+        except EOFError:
+            entrada = ""
 
 
 
 def Main():
     if len(sys.argv) != 3:
         return False
-    # print(sys.argv[2])
     t0 = os.path.isfile(sys.argv[1])
     t1 = os.path.isfile(sys.argv[2])
 
