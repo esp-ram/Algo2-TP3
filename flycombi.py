@@ -85,7 +85,7 @@ def itinerario_aux(ciudades,dependencias,grafo,archivoAero):
         agregar_arista_dir(orden,depende[0],depende[1])
 
     ordenRecorrido = orden_topologico(orden)
-
+    formato_comas(ordenRecorrido)
     vuelos = []
 
     for i in range(len(ordenRecorrido)-1):
@@ -243,16 +243,21 @@ def pagerank(grafo,k):
     print()
 
 
+def ciudades_por_centr(grafo,listaCiudades):
+    aerol1 = []
+    cent = centralidad(grafo)
+    for ciudad in listaCiudades:
+        aerol1.append((ciudad,cent[ciudad]))
+    aerol1.sort(key = operator.itemgetter(1),reverse = True)
+    return aerol1
+
+
 def vacaciones(origen,k,grafo,aeros):
     if (k.isdigit() == False) and int(k) <= 0:
         return False
     aeroOrigen = obtener_aeropuertos(origen.title(),aeros)
     resParciales = []
-    cent = centralidad(grafo)
-    aeroOrdenado = []
-    for ciudad in aeroOrigen:
-        aeroOrdenado.append((ciudad,cent[ciudad]))
-    aeroOrdenado.sort(key = operator.itemgetter(1),reverse = True)
+    aeroOrdenado = ciudades_por_centr(grafo,aeroOrigen)
     resultad = []
     for item in aeroOrdenado:
         resParciales.append(item[0])
@@ -262,8 +267,10 @@ def vacaciones(origen,k,grafo,aeros):
             break
         resParciales.pop(0)
 
-    formato_flechas(resultad[0])
-    return resultad[0]
+    if len(resultad) != 0:
+        formato_flechas(resultad[0])
+        return resultad[0]
+    return None
 
 
 def nueva_aerolinea(archivo,grafo,copiaVuelos):
@@ -298,7 +305,6 @@ def itinerario(archivo,grafo,archivoAero):
     for i in range(1,len(copia)):
         listaDependencias.append(copia[i])
 
-    formato_comas(copia[0])
 
     itinerario_aux(copia[0],listaDependencias,grafo,archivoAero)
 
@@ -393,7 +399,7 @@ def menu(grafoTiempos,grafoPrecios,grafoFrecuencias,copiaAero,copiaVuelos):
                 itinerario(opciones[0],grafoPrecios,copiaAero)
 
             elif len(opciones) == 1 and comando == "exportar_kml":
-                if len(ultimaRespuesta) != 0:
+                if len(ultimaRespuesta) != 0 and ultimaRespuesta[0] != None:
                     exportar_kml(opciones[0],ultimaRespuesta[0],copiaAero)
 
             elif len(opciones) == 1 and comando == "centralidad":
