@@ -1,5 +1,4 @@
 from grafos import *
-import csv
 import operator
 import random
 
