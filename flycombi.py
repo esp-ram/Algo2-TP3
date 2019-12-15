@@ -93,8 +93,8 @@ def itinerario_aux(ciudades,dependencias,grafo,archivoAero):
         airLlegada = obtener_aeropuertos(ordenRecorrido[i+1],archivoAero)
         for aeroS in airSalida:
             for aeroL in airLlegada:
-                c,d = camino_dist_minimo(grafo,aeroS,aeroL)
-                lista.append((c,d))
+                camino,dist = camino_dist_minimo(grafo,aeroS,aeroL)
+                lista.append((camino,dist))
         vuelos.append(min(lista,key=operator.itemgetter(1)))
 
     for rec in vuelos:
@@ -226,36 +226,36 @@ def pagerank(grafo,k):
                 completado = False
 
     resultado = []
-    dicc = listaParciales[len(listaParciales)-1]
-    for key in dicc:
-        resultado.append((key,dicc[key]))
+    final = listaParciales[len(listaParciales)-1]
+    for key in final:
+        resultado.append((key,final[key]))
 
     resultado.sort(key = operator.itemgetter(1),reverse = True)
 
     limite = min(int(k),len(resultado))
+    muestra = []
     for i in range(limite):
-        print(resultado[i][0],end = "")
-        if i != limite-1 :
-            print(",",end = " ")
-    print()
+        muestra.append(resultado[i][0])
+
+    formato_print(muestra,"coma")
 
 
 def ciudades_por_centr(grafo,listaCiudades):
-    aerol1 = []
-    cent = centralidad(grafo)
+    aeroOrden = []
+    central = centralidad(grafo)
     for ciudad in listaCiudades:
-        aerol1.append((ciudad,cent[ciudad]))
-    aerol1.sort(key = operator.itemgetter(1),reverse = True)
-    return aerol1
+        aeroOrden.append((ciudad,central[ciudad]))
+    aeroOrden.sort(key = operator.itemgetter(1),reverse = True)
+    return aeroOrden
 
 
 def vacaciones(origen,k,grafo,aeros):
     if (k.isdigit() == False) and int(k) <= 0:
         return False
-    aeroOrigen = obtener_aeropuertos(origen.title(),aeros)
-    resParciales = []
+    aeroOrigen = obtener_aeropuertos(origen,aeros)
     aeroOrdenado = ciudades_por_centr(grafo,aeroOrigen)
     resultad = []
+    resParciales = []
     for item in aeroOrdenado:
         resParciales.append(item[0])
         N_Lugares(grafo,item[0],item[0],int(k)-1,resParciales,0,resultad)
@@ -277,9 +277,8 @@ def nueva_aerolinea(archivo,grafo,copiaVuelos):
     for punto in ver_vertices(resultado):
         for vertice in ver_adyacentes(resultado,punto):
             for linea in copiaVuelos:
-                if ((linea[0] == punto and linea[1] == vertice) or (linea[1] == punto and linea[0] == vertice)):
-                    if linea not in vuelos:
-                        vuelos.append(linea)
+                if ((linea[0] == punto and linea[1] == vertice) or (linea[1] == punto and linea[0] == vertice)) and linea not in vuelos:
+                    vuelos.append(linea)
 
     with open(archivo,"w") as arch:
         for item in vuelos:
