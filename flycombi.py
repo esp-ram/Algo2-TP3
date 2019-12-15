@@ -10,19 +10,18 @@ PRECISION = 0.00000000000000005
 
 ####### FUNCIONES AUXILIARES
 
-def formato_flechas(texto):
-    for i in range(len(texto)):
-        print(texto[i],end = " ")
-        if i != len(texto)-1 :
-            print("->",end = " ")
-    print()
+def formato_print(texto,separador):
+    if separador == "flecha":
+        sep = "->"
+        espaciado = " "
+    else:
+        sep = ","
+        espaciado = ""
 
-
-def formato_comas(texto):
     for i in range(len(texto)):
-        print(texto[i],end = "")
+        print(texto[i],end = espaciado)
         if i != len(texto)-1 :
-            print(",",end = " ")
+            print(sep,end = " ")
     print()
 
 
@@ -85,7 +84,7 @@ def itinerario_aux(ciudades,dependencias,grafo,archivoAero):
         agregar_arista_dir(orden,depende[0],depende[1])
 
     ordenRecorrido = orden_topologico(orden)
-    formato_comas(ordenRecorrido)
+    formato_print(ordenRecorrido,"coma")
     vuelos = []
 
     for i in range(len(ordenRecorrido)-1):
@@ -99,7 +98,7 @@ def itinerario_aux(ciudades,dependencias,grafo,archivoAero):
         vuelos.append(min(lista,key=operator.itemgetter(1)))
 
     for rec in vuelos:
-        formato_flechas(rec[0])
+        formato_print(rec[0],"flecha")
 
 
 def escritura_ubicacion(aeropuerto,coord,arch):
@@ -176,7 +175,7 @@ def camino_mas(modo,origen,destino,grafoPrecios,grafoTiempos,vuelos):
     elif modo == "rapido":
         recorrido = camino_mas_ops(origen,destino,grafoTiempos,vuelos)
 
-    formato_flechas(recorrido[0])
+    formato_print(recorrido[0],"flecha")
     return recorrido[0]
 
 
@@ -188,7 +187,6 @@ def camino_escalas(origen,destino,grafo,aeros):
         return False
 
     resultados = []
-
     for salida in aeroOrigen:
         padres, orden = BFS(grafo,salida)
 
@@ -196,13 +194,12 @@ def camino_escalas(origen,destino,grafo,aeros):
             resultados.append((salida,llegada,orden[llegada]))
 
     elegido = min(resultados,key = operator.itemgetter(2))
-
     recorrido = []
     recorrido.append(elegido[1])
     while recorrido[0] != elegido[0]:
         recorrido.insert(0,padres[recorrido[0]])
 
-    formato_flechas(recorrido)
+    formato_print(recorrido,"flecha")
     return recorrido
 
 
@@ -268,7 +265,7 @@ def vacaciones(origen,k,grafo,aeros):
         resParciales.pop(0)
 
     if len(resultad) != 0:
-        formato_flechas(resultad[0])
+        formato_print(resultad[0],"flecha")
         return resultad[0]
     return None
 
@@ -305,7 +302,6 @@ def itinerario(archivo,grafo,archivoAero):
     for i in range(1,len(copia)):
         listaDependencias.append(copia[i])
 
-
     itinerario_aux(copia[0],listaDependencias,grafo,archivoAero)
 
 
@@ -329,8 +325,6 @@ def centralidad_B(n,grafo):
     lista.sort(key=operator.itemgetter(1),reverse=True)
     limite = min(len(lista),n)
 
-
-
     for i in range(limite):
         print(lista[i][0],end = "")
         if i != limite-1 :
@@ -351,7 +345,7 @@ def recorrer_mundo(ciudadInicio,grafo,aeros,vuelos):
         recorrida(grafo,recorridoParcial,pista,largos,0,resultados,minAbs)
         recorridoParcial.pop()
 
-    formato_flechas(resultados[len(resultados)-1])
+    formato_print(resultados[len(resultados)-1],"flecha")
     print("Costo:",largos[len(largos)-1])
     return resultados[len(resultados)-1]
 
