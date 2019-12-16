@@ -1,6 +1,7 @@
 from grafos import *
 import operator
 import random
+import heapq
 
 
 
@@ -14,17 +15,15 @@ def dijkstra(grafo,origen):
     distancia[origen] = 0
     padre[origen] = None
 
-    cola = []
-
-    cola.append([distancia[origen],origen])
-    while len(cola) != 0:
-        cola.sort(key=operator.itemgetter(0), reverse = False)
-        dist,vertice = cola.pop(0)
+    heap = []
+    heapq.heappush(heap,(distancia[origen],origen))
+    while len(heap) != 0:
+        dist,vertice = heapq.heappop(heap)
         for w in ver_adyacentes(grafo,vertice):
             if distancia[vertice] + obtener_peso(grafo,vertice,w) < distancia[w]:
                 distancia[w] = distancia[vertice] + obtener_peso(grafo,vertice,w)
                 padre[w] = vertice
-                cola.append([distancia[w],w])
+                heapq.heappush(heap,([distancia[w],w]))
 
     return padre,distancia
 
@@ -124,19 +123,17 @@ def centralidad(grafo):
 def prim(grafo,vertice):
     visitados = set()
     visitados.add(vertice)
-    cola = []
+    heap = []
     for w in ver_adyacentes(grafo,vertice):
-        cola.append((vertice,w,obtener_peso(grafo,vertice,w)))
+        heapq.heappush(heap,(obtener_peso(grafo,vertice,w),vertice,w))
 
-    cola.sort(key=operator.itemgetter(2))
 
     gr = crear_grafo()
     for vertex in ver_vertices(grafo):
         agregar_vertice(gr,vertex)
 
-    while len(cola)!= 0:
-        cola.sort(key=operator.itemgetter(2))
-        v,w,peso = cola.pop(0)
+    while len(heap)!= 0:
+        peso,v,w = heapq.heappop(heap)
         if w in visitados:
             continue
 
@@ -144,7 +141,7 @@ def prim(grafo,vertice):
         visitados.add(w)
         for x in ver_adyacentes(grafo,w):
             if x not in visitados:
-                cola.append((w,x,obtener_peso(grafo,w,x)))
+                heapq.heappush(heap,(obtener_peso(grafo,w,x),w,x))
 
     return gr
 
